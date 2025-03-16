@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Collection Application</title>
+</head>
+<body>
+    <!-- Register and Login Section -->
+    <div id="auth-section">
+        <h1>Welcome to the Book Collection Application!</h1>
+        <p>Please register or log in to continue.</p>
+        <a href="/register.html"><button>Register</button></a>
+        <a href="/login.html"><button>Login</button></a>
+    </div>
+
+    <!-- Main App Section (Hidden until successful login) -->
+    <div id="app-section" style="display:none;">
+        <h1>Welcome to the Main Page!</h1>
+        <ul>
+            <li><a href="/books/html">📚 View Books</a></li>
+            <li><a href="/authors/html">✍️ View Authors</a></li>
+            <li><a href="/readers/html">👥 View Readers</a></li>
+            <li><a href="/reviews/html">📝 View Reviews</a></li>
+            <li><a href="/support">📞 Support Page (Firebase)</a></li>
+            <li><a href="/admin">👨‍💻 Admin (Firebase)</a></li>
+        </ul>
+        <button onclick="logout()">Logout</button>
+    </div>
+
+    <!-- Firebase Integration -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB22TSCqv3Iy6NVPAgGqZjK1MNwkQkJDnU",
+            authDomain: "book-collection-app-dfa46.firebaseapp.com",
+            databaseURL: "https://book-collection-app-dfa46-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "book-collection-app-dfa46",
+            storageBucket: "book-collection-app-dfa46.firebasestorage.app",
+            messagingSenderId: "440132345024",
+            appId: "1:440132345024:web:e4e4598b4a0972e48f2125"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Check Authentication State
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById("auth-section").style.display = "none";
+                document.getElementById("app-section").style.display = "block";
+            } else {
+                document.getElementById("auth-section").style.display = "block";
+                document.getElementById("app-section").style.display = "none";
+            }
+        });
+
+        // Logout Function
+        window.logout = async function () {
+            await signOut(auth);
+            alert("You have been logged out!");
+            window.location.href = "/login.html";
+        };
+    </script>
+</body>
+</html>

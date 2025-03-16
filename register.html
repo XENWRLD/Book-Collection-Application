@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+</head>
+<body>
+    <h1>Register</h1>
+    <input type="text" id="name" placeholder="Full Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button id="registerButton">Register</button>
+
+    <!-- Import Firebase modules -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB22TSCqv3Iy6NVPAgGqZjK1MNwkQkJDnU",
+            authDomain: "book-collection-app-dfa46.firebaseapp.com",
+            databaseURL: "https://book-collection-app-dfa46-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "book-collection-app-dfa46",
+            storageBucket: "book-collection-app-dfa46.firebasestorage.app",
+            messagingSenderId: "440132345024",
+            appId: "1:440132345024:web:e4e4598b4a0972e48f2125"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const database = getDatabase(app);
+
+        document.getElementById('registerButton').addEventListener('click', async () => {
+            const name = document.getElementById("name").value;
+            const email = document.getElementById("email").value;
+            const password = document.getElementById("password").value;
+
+            if (!name || !email || !password) {
+                alert("Please fill all fields!");
+                return;
+            }
+
+            try {
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const uid = userCredential.user.uid;
+
+                await set(ref(database, 'users/' + uid), {
+                    name: name,
+                    email: email
+                });
+
+                const response = await fetch('/register_user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uid, name, email })
+                });
+
+                if (response.ok) {
+                    alert("User registered successfully!");
+                    window.location.href = "/";
+                } else {
+                    alert("Failed to register in MySQL.");
+                }
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        });
+    </script>
+</body>
+</html>

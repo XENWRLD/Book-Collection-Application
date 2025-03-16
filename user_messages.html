@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Messages</title>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB22TSCqv3Iy6NVPAgGqZjK1MNwkQkJDnU",
+            authDomain: "book-collection-app-dfa46.firebaseapp.com",
+            databaseURL: "https://book-collection-app-dfa46-default-rtdb.europe-west1.firebasedatabase.app/",
+            projectId: "book-collection-app-dfa46",
+            storageBucket: "book-collection-app-dfa46.firebaseapp.com",
+            messagingSenderId: "440132345024",
+            appId: "1:440132345024:web:e4e4598b4a0972e48f2125",
+            measurementId: "G-HM4KBT1QCC"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        function loadMessages() {
+            const email = prompt("Enter your email to view messages:"); // Replace with login session in production
+            const userId = email.replace('.', '_');
+
+            database.ref(`messages/${userId}`).once("value", (snapshot) => {
+                const messagesContainer = document.getElementById("messages");
+                messagesContainer.innerHTML = ""; // Clear previous messages
+                snapshot.forEach((childSnapshot) => {
+                    const message = childSnapshot.val();
+                    const messageDiv = document.createElement("div");
+                    messageDiv.innerHTML = `
+                        <p><strong>Subject:</strong> ${message.subject}</p>
+                        <p>${message.message}</p>
+                        <p><small>${message.timestamp}</small></p>
+                        <hr>
+                    `;
+                    messagesContainer.appendChild(messageDiv);
+                });
+            }).catch((error) => {
+                alert("Error loading messages: " + error.message);
+            });
+        }
+
+        window.onload = loadMessages;
+    </script>
+</head>
+<body>
+    <h1>Your Messages</h1>
+    <div id="messages"></div>
+</body>
+</html>

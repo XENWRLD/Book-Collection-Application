@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Page - Updated with Subject Handling</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getDatabase, ref, push, onChildAdded } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+
+        // ✅ Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB22TSCqv3Iy6NVPAgGqZjK1MNwkQkJDnU",
+            authDomain: "book-collection-app-dfa46.firebaseapp.com",
+            databaseURL: "https://book-collection-app-dfa46-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "book-collection-app-dfa46",
+            storageBucket: "book-collection-app-dfa46.firebasestorage.app",
+            messagingSenderId: "440132345024",
+            appId: "1:440132345024:web:e4e4598b4a0972e48f2125"
+        };
+
+        // ✅ Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+
+        // ✅ Send Message (with subject support)
+        window.sendMessage = async function () {
+            const name = document.getElementById("name").value;
+            const subject = document.getElementById("subject").value;
+            const message = document.getElementById("message").value;
+            const timestamp = new Date().toISOString();
+
+            if (currentUser) {
+                const userMessagesRef = ref(db, `messages/${currentUser.uid}`);
+                await push(userMessagesRef, {
+                    name: name,
+                    subject: subject,
+                    message: message,
+                    timestamp: timestamp
+                });
+                alert("Message sent successfully!");
+            } else {
+                alert("You must be logged in.");
+            }
+        };
+
+        // ✅ Load Messages with Admin Replies
+        window.loadUserMessages = function () {
+            const messageContainer = document.getElementById("userMessages");
+            messageContainer.innerHTML = "";
+            if (currentUser) {
+                const userMessagesRef = ref(db, `messages/${currentUser.uid}`);
+                onChildAdded(userMessagesRef, (snapshot) => {
+                    const data = snapshot.val();
+                    const messageDiv = document.createElement("div");
+                    messageDiv.innerHTML = `
+                        <p><strong>Subject:</strong> ${data.subject}</p>
+                        <p><strong>Message:</strong> ${data.message}</p>
+                        <p><strong>Timestamp:</strong> ${data.timestamp}</p>
+                        <hr>`;
+                    messageContainer.appendChild(messageDiv);
+
+                    // ✅ Display Replies under the same message
+                    const repliesRef = ref(db, `messages/${currentUser.uid}/${snapshot.key}/replies`);
+                    onChildAdded(repliesRef, (replySnapshot) => {
+                        const replyData = replySnapshot.val();
+                        const replyDiv = document.createElement("div");
+                        replyDiv.innerHTML = `<p><strong>Admin Reply:</strong> ${replyData.message}</p>`;
+                        messageDiv.appendChild(replyDiv);
+                    });
+                });
+            }
+        };
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                loadUserMessages();
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Support Page</h1>
+    <form onsubmit="sendMessage(); return false;">
+        <input type="text" id="name" placeholder="Your Name" required><br>
+        <select id="subject">
+            <option value="Defected Product">Defected Product</option>
+            <option value="Late Order">Late Order</option>
+            <option value="Lost Product">Lost Product</option>
+            <option value="Suggestion">Suggestion</option>
+        </select><br>
+        <textarea id="message" placeholder="Enter your message" required></textarea><br>
+        <button type="submit">Send Message</button>
+    </form>
+    <h2>Your Messages</h2>
+    <div id="userMessages"></div>
+</body>
+</html>

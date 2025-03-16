@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews</title>
+</head>
+<body>
+    <h1>Reviews</h1>
+    <table border="1">
+        <tr>
+            <th>Review ID</th>
+            <th>Book ID</th>
+            <th>Reader ID</th>
+            <th>Rating</th>
+            <th>Comment</th>
+        </tr>
+        {% for review in reviews %}
+        <tr>
+            <td>{{ review.ReviewID }}</td>
+            <td>{{ review.BookID }}</td>
+            <td>{{ review.ReaderID }}</td>
+            <td>{{ review.Rating }}</td>
+            <td>{{ review.Comment }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    <br>
+    <a href="/">Back to Home</a>
+</body>
+</html>

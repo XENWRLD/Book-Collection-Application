@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Page - Firebase</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-auth.js";
+        import { getDatabase, ref, push, get, onChildAdded } from "https://www.gstatic.com/firebasejs/9.15.0/firebase-database.js";
+
+        // ✅ Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyB22TSCqv3Iy6NVPAgGqZjK1MNwkQkJDnU",
+            authDomain: "book-collection-app-dfa46.firebaseapp.com",
+            databaseURL: "https://book-collection-app-dfa46-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "book-collection-app-dfa46",
+            storageBucket: "book-collection-app-dfa46.firebasestorage.app",
+            messagingSenderId: "440132345024",
+            appId: "1:440132345024:web:e4e4598b4a0972e48f2125"
+        };
+
+        // ✅ Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getDatabase(app);
+
+        let currentUser = null;
+
+        // ✅ Check if the current user is an admin
+        async function isAdmin(uid) {
+            const adminRef = ref(db, `admins/${uid}`);
+            try {
+                const snapshot = await get(adminRef);
+                return snapshot.exists() && snapshot.val() === true;
+            } catch (error) {
+                console.error("Error checking admin status:", error);
+                return false;
+            }
+        }
+
+        // ✅ Load All User Messages (Admin Only)
+        async function loadAllMessages() {
+            const messagesContainer = document.getElementById("allUserMessages");
+            messagesContainer.innerHTML = "<p>Loading messages...</p>";
+
+            if (!(await isAdmin(currentUser.uid))) {
+                messagesContainer.innerHTML = "<p>You do not have permission to view these messages.</p>";
+                return;
+            }
+
+            const messagesRef = ref(db, 'messages');
+
+            try {
+                const snapshot = await get(messagesRef);
+                messagesContainer.innerHTML = "";
+
+                if (!snapshot.exists()) {
+                    messagesContainer.innerHTML = "<p>No messages found.</p>";
+                    return;
+                }
+
+                snapshot.forEach(userSnapshot => {
+                    const userId = userSnapshot.key;
+                    userSnapshot.forEach(messageSnapshot => {
+                        const messageData = messageSnapshot.val();
+                        const messageKey = messageSnapshot.key;
+
+                        // ✅ Displaying Messages from Users
+                        const messageDiv = document.createElement("div");
+                        messageDiv.innerHTML = `
+                            <p><strong>User ID:</strong> ${userId}</p>
+                            <p><strong>Name:</strong> ${messageData.name}</p>
+                            <p><strong>Subject:</strong> ${messageData.subject}</p>
+                            <p><strong>Message:</strong> ${messageData.message}</p>
+                            <p><strong>Timestamp:</strong> ${messageData.timestamp}</p>
+                            <textarea id="reply-${userId}-${messageKey}" placeholder="Write a reply..."></textarea>
+                            <button onclick="sendReply('${userId}', '${messageKey}')">Send Reply</button>
+                            <hr>
+                        `;
+                        messagesContainer.appendChild(messageDiv);
+
+                        // ✅ Load Existing Replies for the Message
+                        const repliesRef = ref(db, `messages/${userId}/${messageKey}/replies`);
+                        onChildAdded(repliesRef, (replySnapshot) => {
+                            const replyData = replySnapshot.val();
+                            const replyDiv = document.createElement("div");
+                            replyDiv.innerHTML = `<p><strong>Admin Reply:</strong> ${replyData.message}</p>`;
+                            messageDiv.appendChild(replyDiv);
+                        });
+                    });
+                });
+            } catch (error) {
+                console.error("Error loading messages:", error);
+                messagesContainer.innerHTML = "<p>Error loading messages. Check the console.</p>";
+            }
+        }
+
+        // ✅ Send a Reply (Admin Creates a Separate 'replies' Node)
+        window.sendReply = async function (userId, messageKey) {
+            const replyMessage = document.getElementById(`reply-${userId}-${messageKey}`).value.trim();
+            if (!replyMessage) {
+                alert("Reply cannot be empty!");
+                return;
+            }
+
+            const replyRef = ref(db, `messages/${userId}/${messageKey}/replies`);
+            try {
+                await push(replyRef, {
+                    message: replyMessage,
+                    name: "Admin",
+                    timestamp: new Date().toISOString()
+                });
+                alert("Reply sent successfully!");
+            } catch (error) {
+                alert("Error sending reply: " + error.message);
+            }
+        };
+
+        // ✅ Authenticate and Check Admin Access
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUser = user;
+                if (await isAdmin(user.uid)) {
+                    loadAllMessages();
+                } else {
+                    alert("You are not authorized to view this page.");
+                    window.location.href = "/login.html";
+                }
+            } else {
+                alert("Please log in to continue.");
+                window.location.href = "/login.html";
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>Admin Page</h1>
+    <h2>All User Messages</h2>
+    <div id="allUserMessages"></div>
+    <a href="/">Back to Home</a>
+</body>
+</html>
